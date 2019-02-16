@@ -6,11 +6,11 @@
 #include "semphr.h"
 #include "stdio.h"
 #include "printf_lib.h"
-#include "uart2.hpp"
-#include "uart3.hpp"
+#include "c_uart2.h"
+#include "c_uart3.h"
 
-#define JAY 1
-#define SEMIL 0
+#define JAY 0
+#define SEMIL 1
 
 Uart2 &sender = Uart2::getInstance();
 Uart3 &receiver = Uart3::getInstance();
@@ -39,30 +39,31 @@ void period_1Hz(uint32_t count){
 
 void period_10Hz(uint32_t count){
 #if JAY
-    uint8_t light_value = light.getPercentValue();
-    uint8_t units = light_value % 10;
-    uint8_t tens = light_value / 10;
-    char val[2];
-    val[0]= (char)units;
-    val[1] = (char)tens;
-    u0_dbg_printf("txx: %d\t%d\n", val[1],val[0]);
-//    char jay = 'J';
-    bool check = sender.put(val, 0);
+//    uint8_t light_value = light.getPercentValue();
+//    uint8_t units = light_value % 10;
+//    uint8_t tens = light_value / 10;
+//    char val[2];
+//    val[0]= (char)units;
+//    val[1] = (char)tens;
+//    u0_dbg_printf("txx: %d\t%d\n", val[1],val[0]);
+    char jay = 'J';
+    bool check = sender.putChar(jay, 0);
     if(!check)
         u0_dbg_printf("Error in transmitting to semil");
 #endif
 
 #if SEMIL
-    char receive[2] = {'\0'};
-    bool rx_check = receiver.getChar(receive, 10);
+    char receive = {'\0'};
+    bool rx_check = receiver.getChar(&receive, 0);
     if(!rx_check)
         u0_dbg_printf("ThanthanGopal\n");
-    u0_dbg_printf("chk: %c\t%c\n", receive[1],receive[0]);
-    int a[2];
-    a[0] = (int)receive[0];
-    a[1] = (int)receive[1];
-    u0_dbg_printf("RX:%d%d\n", a[1], a[0]);
-
+    else{
+        u0_dbg_printf("chk: %c\t%c\n", receive);
+//        int a[2];
+//        a[0] = (int)receive;
+//        a[1] = (int)receive;
+//        u0_dbg_printf("RX:%d%d\n", a[1], a[0]);
+    }
 #endif
 }
 
