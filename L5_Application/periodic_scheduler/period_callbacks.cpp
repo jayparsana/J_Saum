@@ -9,8 +9,8 @@
 #include "uart2.hpp"
 #include "uart3.hpp"
 
-#define JAY 1
-#define SEMIL 0
+#define SENDER 0
+#define RECEIVER 1
 
 Uart2 &sender = Uart2::getInstance();
 Uart3 &receiver = Uart3::getInstance();
@@ -21,11 +21,12 @@ const uint32_t PERIOD_TASKS_STACK_SIZE_BYTES = (512 * 4);
 const uint32_t PERIOD_MONITOR_TASK_STACK_SIZE_BYTES = (512 * 3);
 
 bool period_init(void){
-#if JAY
+#if SENDER
     sender.init(38400, 10, 10);
 #endif
-#if SEMIL
+#if RECEIVER
     receiver.init(38400, 10, 10);
+    seven_segment.init();
 #endif
     return true;
 }
@@ -38,31 +39,23 @@ void period_1Hz(uint32_t count){
 }
 
 void period_10Hz(uint32_t count){
-#if JAY
-    uint8_t light_value = light.getPercentValue();
-    uint8_t units = light_value % 10;
-    uint8_t tens = light_value / 10;
-    char val[2];
-    val[0]= (char)units;
-    val[1] = (char)tens;
-    u0_dbg_printf("txx: %d\t%d\n", val[1],val[0]);
-//    char jay = 'J';
-    bool check = sender.put(val, 0);
-    if(!check)
-        u0_dbg_printf("Error in transmitting to semil");
+#if SENDER
+    char light_value = (char)light.getPercentValue();
+    bool tx_check = sender.putChar(light_value, 0);
+    if (!tx_check)
+        u0_dbg_printf("Error in TX");
 #endif
 
-#if SEMIL
-    char receive[2] = {'\0'};
-    bool rx_check = receiver.getChar(receive, 10);
-    if(!rx_check)
-        u0_dbg_printf("ThanthanGopal\n");
-    u0_dbg_printf("chk: %c\t%c\n", receive[1],receive[0]);
-    int a[2];
-    a[0] = (int)receive[0];
-    a[1] = (int)receive[1];
-    u0_dbg_printf("RX:%d%d\n", a[1], a[0]);
-
+#if RECEIVER
+    char receive = {'\0'};
+    bool rx_check = receiver.getChar(&receive, 0);
+    if(!rx_check){
+        u0_dbg_printf("Did not receive any data\n");
+    }
+    else{
+        seven_segment.setNumber(receive);
+        u0_dbg_printf("RX:%d\n", (int)receive);
+    }
 #endif
 }
 
